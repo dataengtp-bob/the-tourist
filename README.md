@@ -32,3 +32,34 @@ ON CREATE SET
     s.location = point({latitude: toFloat(row.stop_lat), longitude: toFloat(row.stop_lon)})
 RETURN count(s);
 ```
+
+## Prepare for Airflow
+
+First, get your **id**:
+```sh
+id -u
+```
+
+Now edit the **.env** file and swap out 501 for your own.
+
+Run the following command to creat the volumes needed in order to send data to airflow:
+
+```sh
+mkdir -p ./dags ./logs ./plugins
+```
+
+create JWT secret, using this [website](https://jwtsecrets.com/)
+or look [here](https://www.willhaley.com/blog/generate-jwt-with-bash/).
+
+And run this **once**:
+```sh
+docker-compose up airflow-init
+```
+
+If the exit code is 0 then it's all good.
+
+**Running**
+
+```sh
+docker-compose up -d
+```
