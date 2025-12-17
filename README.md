@@ -35,21 +35,50 @@ RETURN count(s);
 
 ## Prepare for Airflow
 
-First, get your **id**:
+### First step: Setting up environment
+
+First, create the **.env** file if not yet existed:
+
+```
+_AIRFLOW_VERSION=3.1.0
+_AIRFLOW_WWW_USER_USERNAME=airflow
+_AIRFLOW_WWW_USER_PASSWORD=airflow
+_PIP_ADDITIONAL_REQUIREMENTS=xlsx2csv==0.7.8 faker==8.12.1 apache-airflow-providers-postgres==6.3.0
+
+AIRFLOW_GID=0
+AIRFLOW_UID=TODO_CHANGE_ME
+AIRFLOW_API_AUTH_JWT_SECRET=TODO_CHANGE_ME
+
+PGADMIN_DEFAULT_EMAIL=admin@admin.com
+PGADMIN_DEFAULT_PASSWORD=root
+PGADMIN_PORT=5050
+
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=airflow
+
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=password
+```
+
+Now get your **id** :
 ```sh
 id -u
 ```
 
-Now edit the **.env** file and swap out 501 for your own.
+And create JWT secret, using this [website](https://jwtsecrets.com/)
+or look [here](https://www.willhaley.com/blog/generate-jwt-with-bash/).
 
-Run the following command to creat the volumes needed in order to send data to airflow:
+Now edit the **.env** file and swap out `AIRFLOW_UID` and `AIRFLOW_API_AUTH_JWT_SECRET` for your own.
+
+### Second step: Running docker compose
+
+Run the following command to create the volumes needed in order to send data to airflow:
 
 ```sh
 mkdir -p ./dags ./logs ./plugins
 ```
-
-create JWT secret, using this [website](https://jwtsecrets.com/)
-or look [here](https://www.willhaley.com/blog/generate-jwt-with-bash/).
 
 And run this **once**:
 ```sh
