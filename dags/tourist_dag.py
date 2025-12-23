@@ -5,6 +5,7 @@ from datetime import timedelta
 import pendulum
 import logging
 from helpers.ingest_raw import ingest_train_stops, ingest_gtfs
+from helpers.clean_data import clean_stops, clean_stop_times, clean_trips, enrich_and_persist   
 
 logger = logging.getLogger(__name__)  # Airflow captures this per task
 output_folder = "/opt/airflow/data"   # ensure this folder exists and is writable
@@ -53,7 +54,35 @@ with DAG(
         python_callable=ingest_gtfs
     )
 
+    end_ingest = EmptyOperator(task_id="end_ingest")
+
+    clean_stops_task = PythonOperator(
+        task_id="clean_stops",
+        python_callable=clean_stops
+    )
+
+    clean_stop_times_task = PythonOperator(
+        task_id="clean_stop_times",
+        python_callable=clean_stop_times
+    )
+
+    clean_trips_task = PythonOperator(
+        task_id="clean_trips",
+        python_callable=clean_trips
+    )
+
+    enrich_task = PythonOperator(
+        task_id="enrich_and_persist_staging",
+        python_callable=enrich_and_persist
+    )
+
     end = EmptyOperator(task_id="end")
 
     # -------- Graph --------
-    start >> [ingest_stations, ingest_gtfs] >> end
+    start >> [ingest_stations, ingest_gtfs]
+
+    ingest_gtfs >> [clean_stop_times_task, clean_trips_task]
+    ingest_stations >> clean_stops_task
+
+    [clean_stops_task, clean_stop_times_task] >> enrich_task
+    enrich_task >> end
