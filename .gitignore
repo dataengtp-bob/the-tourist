@@ -1,5 +1,6 @@
 # Virtual envs
 .venv
+.env
 
 # Extracted data
 # data/*

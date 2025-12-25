@@ -1,1 +1,5 @@
 pandas
+neo4j==5.25.0
+pyneo==0.2.0
+py2neo==2021.2.4
+apache-airflow-providers-postgres==6.3.0
