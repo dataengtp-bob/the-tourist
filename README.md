@@ -2,35 +2,9 @@
 
 ## Getting started
 
-**Setting up environment**
+### Prepare for Airflow
 
-```bash
-python3.9 -m venv .venv
-.venv\Scripts\activate
-pip install -U pandas geopandas shapely sqlalchemy psycopg2 geoalchemy2
-```
-
-**Loading stops into Neo4j**
-
-```cypher
-// 1. Load the CSV
-LOAD CSV WITH HEADERS FROM 'file:///stops.txt' AS row
-
-// 2. Filter and Extract ID
-WITH row
-WHERE row.location_type = '1'
-
-MERGE (s:Station {id: row.stop_id})
-ON CREATE SET
-    s.name = row.stop_name,
-    // Create a 2D geospatial point
-    s.location = point({latitude: toFloat(row.stop_lat), longitude: toFloat(row.stop_lon)})
-RETURN count(s);
-```
-
-## Prepare for Airflow
-
-### First step: Setting up environment
+#### First step: Setting up environment
 
 First, create the **.env** file if not yet existed:
 
@@ -73,7 +47,7 @@ Now edit the **.env** file and swap out `AIRFLOW_UID` and `AIRFLOW_API_AUTH_JWT_
 Run the following command to create the volumes needed in order to send data to airflow:
 
 ```sh
-mkdir -p ./dags ./logs ./plugins
+mkdir -p ./dags ./logs
 ```
 
 And run this **once**:
@@ -84,56 +58,72 @@ docker-compose up airflow-init
 
 If the exit code is 0 then it's all good.
 
-**Running**
+**Running Airflow**
 
 ```sh
 docker-compose up -d
-// Split the string "StopArea:OCE71043075" by "OCE" -> ["StopArea:", "71043075"]
-// We select index [1] to get the number part
-WITH row, split(row.stop_id, 'OCE')[1] AS clean_id
+```
 
-// 3. Create the Node using the clean number
-MERGE (s:Stop {id: clean_id})
+### Loading data into Neo4j
 
-// 4. Set properties
-SET s.name = row.stop_name,
-    s.latitude = toFloat(row.stop_lat),
-    s.longitude = toFloat(row.stop_lon)
+**Clean slate**
 
-RETURN s
+```
+MATCH (n) DETACH DELETE n
+```
+
+**Create Index**
+
+```
+CREATE CONSTRAINT FOR (s:Station) REQUIRE s.id IS UNIQUE;
+CREATE CONSTRAINT FOR (t:Trip) REQUIRE t.id IS UNIQUE;
+```
+
+**Loading Stations into Neo4j**
+
+```cypher
+LOAD CSV WITH HEADERS FROM 'file:///stations.csv' AS row
+MERGE (s:Station {id: row.stop_id})
+SET s.name = row.name,
+    s.abbreviation = row.abbrev,
+    s.insee_code = row.code_insee,
+    s.latitude = toFloat(row.lat),
+    s.longitude = toFloat(row.lon)
+RETURN count(s) as StationsImported
 ```
 
 **Loading trips into Neo4j**
 
 ```cypher
-// 1. Load the CSV
-LOAD CSV WITH HEADERS FROM 'file:///trips.txt' AS row
+:auto LOAD CSV WITH HEADERS FROM 'file:///stop_times.csv' AS row
+CALL {
+  WITH row
+  
+  // 1. Create the Trip Node from the ID string
+  MERGE (t:Trip {id: row.trip_id})
+  
+  // 2. Parse ID for Date (runs only when creating the node to save time)
+  ON CREATE SET 
+    t.date = split(row.trip_id, ':')[-1]
+  
+  // 3. Find the Station
+  MATCH (s:Station {id: row.stop_id})
+  
+  // 4. Connect them
+  MERGE (t)-[r:STOPS_AT]->(s)
+  SET r.arrival_time = row.arrival_time,
+      r.departure_time = row.departure_time,
+      r.stop_sequence = toInteger(row.stop_sequence)
 
-// 2. Parse string
-WITH row, split(row.trip_id, ':') AS parts
+} IN TRANSACTIONS OF 1000 ROWS
+RETURN count(*) as RowsProcessed
+```
 
-WITH row,
-     parts[-5] AS origin_id,
-     parts[-4] AS dest_id
-    //  parts[-1] AS date_str,
-    //  parts[-2] AS time_str,
+**Test query**
 
-// 3. Create the Trip Node
-MERGE (t:Trip {id: row.route_id})
-SET t.headsign = row.trip_headsign
-    // t.date = date_str,
-    // t.time = time_str
-
-// 4. Link Origin
-WITH t, origin_id, dest_id
-MATCH (start:Stop {id: origin_id})
-MERGE (t)-[:STARTS_AT]->(start)
-
-// 5. Link Destination
-// *** FIX IS HERE: We must pass 'start' forward to use it later ***
-WITH t, dest_id, start
-MATCH (end:Stop {id: dest_id})
-MERGE (t)-[:ENDS_AT]->(end)
-
-RETURN t.id, start.name, end.name
+```cypher
+MATCH (t:Trip {id: 'OCEEA436129R5235_R:CTE:FR:Line::8440e055-0d15-4156-9e77-017af816441a::87313874:87296442:10:1215:20260213'})
+MATCH (t)-[r:STOPS_AT]->(s:Station)
+RETURN t.id, s.name, r.arrival_time
+ORDER BY r.stop_sequence ASC
 ```

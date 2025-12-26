@@ -2,5 +2,15 @@
 .venv
 .env
 
-# Extracted data
-# data/*
+# Python
+__pycache__/
+*~
+
+# Data files
+*.sql
+*.csv
+*.xlsx
+
+# Extracted data directories
+data/landing/*
+data/staging/*

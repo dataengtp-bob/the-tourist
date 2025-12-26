@@ -3,21 +3,19 @@ import pandas as pd
 
 STAGING_DIR = "data/staging"
 LANDING_DIR = "data/landing"
-STOPS_DIR = f"{LANDING_DIR}/train_stops"
+STOPS_DIR = f"{LANDING_DIR}/stations"
 GTFS_DIR = f"{LANDING_DIR}/gtfs"
 
-def ensure_directories():
+
+def create_staging_directories():
     os.makedirs(STOPS_DIR, exist_ok=True)
     os.makedirs(GTFS_DIR, exist_ok=True)
     os.makedirs(STAGING_DIR, exist_ok=True)
 
-def clean_stops():
-    ensure_directories()
-    df = pd.read_csv(
-        f"{STOPS_DIR}/gares-de-voyageurs.csv",
-        sep=";",
-        dtype=str
-    )
+
+def clean_and_stage_stations():
+    create_staging_directories()
+    df = pd.read_csv(f"{STOPS_DIR}/gares-de-voyageurs.csv", sep=";", dtype=str)
 
     df = df.rename(
         columns={
@@ -30,9 +28,7 @@ def clean_stops():
 
     # Split lat / lon
     df[["lat", "lon"]] = (
-        df["position_geographique"]
-        .str.split(",", expand=True)
-        .astype(float)
+        df["position_geographique"].str.split(",", expand=True).astype(float)
     )
 
     # Keep only expected columns
@@ -51,13 +47,11 @@ def clean_stops():
     df = df.dropna(subset=["stop_id", "lat", "lon"])
 
     # Persist
-    df.to_parquet(
-        f"{STAGING_DIR}/stops_staging.parquet",
-        index=False
-    )
+    df.to_csv(f"{STAGING_DIR}/stations.csv", index=False)
 
-def clean_stop_times():
-    ensure_directories()
+
+def clean_and_stage_stop_times():
+    create_staging_directories()
 
     df = pd.read_csv(f"{GTFS_DIR}/stop_times.txt")
 
@@ -96,13 +90,11 @@ def clean_stop_times():
     # Build full timestamps
     # ----------------------------------------
     df["arrival_time"] = pd.to_datetime(
-        df["service_date"].astype(str) + " " + df["arrival_time"],
-        errors="coerce"
+        df["service_date"].astype(str) + " " + df["arrival_time"], errors="coerce"
     )
 
     df["departure_time"] = pd.to_datetime(
-        df["service_date"].astype(str) + " " + df["departure_time"],
-        errors="coerce"
+        df["service_date"].astype(str) + " " + df["departure_time"], errors="coerce"
     )
 
     # ----------------------------------------
@@ -110,9 +102,7 @@ def clean_stop_times():
     # ----------------------------------------
     df["stop_sequence"] = df["stop_sequence"].astype(int)
 
-    df = df.dropna(
-        subset=["arrival_time", "departure_time", "service_date"]
-    )
+    df = df.dropna(subset=["arrival_time", "departure_time", "service_date"])
 
     df = df.sort_values(["trip_id", "stop_sequence"])
 
@@ -128,22 +118,8 @@ def clean_stop_times():
     ]
 
     # Persist staging table
-    df.to_parquet(
-        f"{STAGING_DIR}/stop_times_staging.parquet",
-        index=False
-    )
+    df.to_csv(f"{STAGING_DIR}/stop_times.csv", index=False)
 
-def enrich_and_persist():
-    ensure_directories()
-    stops = pd.read_parquet(f"{STAGING_DIR}/stops_staging.parquet")
-    stop_times = pd.read_parquet(f"{STAGING_DIR}/stop_times_clean.parquet")
-
-    enriched = stop_times.merge(stops, on="stop_id", how="inner")
-
-    enriched.to_parquet(
-        f"{STAGING_DIR}/stop_times_staging.parquet",
-        index=False
-    )
 
 if __name__ == "__main__":
-    clean_stops()
+    clean_and_stage_stations()
