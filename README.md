@@ -6,44 +6,83 @@ This project is a data engineering application built to analyze railway trips us
 
 The project follows a layered data architecture and uses Apache Airflow for workflow orchestration and Neo4j for graph-based analytics. It demonstrates how raw transportation data can be ingested, cleaned, enriched, and transformed into an analytics-ready graph model.
 
----
+## Datasets
 
-## Project Description
+The project is based on the following open datasets:
 
-The project uses two open datasets provided by SNCF:
+- **[SNCF – Gares de voyageurs](https://data.sncf.com/explore/dataset/gares-de-voyageurs/table/?disjunctive.segment_drg&sort=nom)** :
+  Passenger railway stations dataset containing station identifiers, names, and geographic information.  
 
-- **Gares de voyageurs**: a dataset containing information about passenger railway stations (names, locations, and identifiers).
-- **Réseau SNCF TGV, Intercités et TER**: GTFS datasets containing train schedules and stop times.
+- **[Réseau SNCF TGV, Intercités et TER](https://transport.data.gouv.fr/datasets/horaires-sncf)** : 
+  GTFS datasets containing train schedules and stop times.  
 
-The data pipeline is organized into three main stages:
+## Project Design and Architecture
 
-1. **Raw Data Ingestion**  
-   Raw CSV and GTFS files are downloaded from official SNCF sources and stored in a landing zone without modification to ensure data traceability.
+The project is divided into three main areas, each implemented as a separate Airflow pipeline.
 
-2. **Staging and Transformation**  
-   The raw data is cleaned, ordered, and enriched. Station metadata is joined with stop time information, and stop sequences are validated and structured. The resulting datasets are stored in a durable staging zone.
+### 1. Landing Zone – Raw Data Ingestion
 
-3. **Production and Graph Analytics**  
-   The staged data is transformed into a graph model and loaded into a Neo4j database. Stations are represented as nodes, and the order of stops within each train trip is modeled using relationships. This structure enables graph queries to analyze connectivity, identify detours between cities, and explore indirect train journeys.
+**Objective:**  
+Collect raw data from official SNCF sources and store it without modification to ensure traceability and reproducibility.
 
----
+**Steps:**
+- Download raw CSV and GTFS files (stations and stop times).
+- Store the files in a landing directory.
+- Log ingestion metadata such as timestamp and data source.
 
-## Questions Addressed by the Project
+**Output:**  
+Raw datasets stored in the landing zone.
 
-- Which train trips connect two cities through intermediate stations or cities?
-- Which stations or cities are frequently used as detours?
-- How are railway stations connected based on train stop sequences?
-- Which stations play a central role in the railway network?
+### 2. Staging Zone – Data Cleaning and Transformation
 
----
+**Objective:**  
+Prepare clean, structured, and enriched datasets suitable for analytics.
+
+**Steps:**
+- Read raw data from the landing zone.
+- Clean station data by removing duplicates and handling missing or invalid values.
+- Clean stop times data by validating stop identifiers and ordering stops using trip IDs and stop sequences.
+- Enrich stop times with station metadata (names and coordinates).
+- Persist the cleaned and enriched datasets in durable storage.
+
+**Staging Tables:**
+- `stops_staging`
+- `stop_times_staging`
+- `trips_staging`
+
+**Output:**  
+Structured and reliable datasets stored in the staging zone.
+
+### 3. Production Zone – Graph Modeling and Analytics
+
+**Objective:**  
+Transform staged data into an analytics-ready graph representation and enable advanced queries.
+
+**Steps:**
+- Create graph nodes for stations and trips.
+- Create relationships representing ordered stop sequences within each trip.
+- Load the graph into Neo4j using batch processing.
+- Execute graph queries to analyze railway connectivity and detect detours.
+
+**Graph Model:**
+- Nodes: `Station`, `Trip`
+- Relationships: `STOPS_AT`, `NEXT_STOP`
+
+**Output:**  
+Neo4j graph database supporting analytical queries.
+
+## Analytical Questions Addressed
+
+- Which train trips connect two cities through intermediate stations?
+- Which stations or cities frequently appear as detours?
+- How are stations connected based on train stop sequences?
+- Which stations are central in the railway network?
 
 ## Team Members
 
 1. **VU Thi Tho** – Raw data ingestion and Airflow pipeline setup  
 2. **HUYNH Huu Thanh Tu** – Data cleaning, enrichment, and staging layer  
 3. **Louis KUSNO** – Graph modeling, Neo4j integration, and analytics queries  
-
----
 
 ## Getting started
 
