@@ -1,5 +1,50 @@
 # the-tourist
 
+## Project Introduction
+
+This project is a data engineering application built to analyze railway trips using open SNCF datasets. Railway schedule data is complex and distributed across multiple tabular files, which makes it difficult to analyze relationships between stations and to identify indirect journeys or detours between cities. The goal of this project is to transform these datasets into a graph-based representation that enables efficient exploration of train connectivity and stop sequences.
+
+The project follows a layered data architecture and uses Apache Airflow for workflow orchestration and Neo4j for graph-based analytics. It demonstrates how raw transportation data can be ingested, cleaned, enriched, and transformed into an analytics-ready graph model.
+
+---
+
+## Project Description
+
+The project uses two open datasets provided by SNCF:
+
+- **Gares de voyageurs**: a dataset containing information about passenger railway stations (names, locations, and identifiers).
+- **Réseau SNCF TGV, Intercités et TER**: GTFS datasets containing train schedules and stop times.
+
+The data pipeline is organized into three main stages:
+
+1. **Raw Data Ingestion**  
+   Raw CSV and GTFS files are downloaded from official SNCF sources and stored in a landing zone without modification to ensure data traceability.
+
+2. **Staging and Transformation**  
+   The raw data is cleaned, ordered, and enriched. Station metadata is joined with stop time information, and stop sequences are validated and structured. The resulting datasets are stored in a durable staging zone.
+
+3. **Production and Graph Analytics**  
+   The staged data is transformed into a graph model and loaded into a Neo4j database. Stations are represented as nodes, and the order of stops within each train trip is modeled using relationships. This structure enables graph queries to analyze connectivity, identify detours between cities, and explore indirect train journeys.
+
+---
+
+## Questions Addressed by the Project
+
+- Which train trips connect two cities through intermediate stations or cities?
+- Which stations or cities are frequently used as detours?
+- How are railway stations connected based on train stop sequences?
+- Which stations play a central role in the railway network?
+
+---
+
+## Team Members
+
+1. **VU Thi Tho** – Raw data ingestion and Airflow pipeline setup  
+2. **HUYNH Huu Thanh Tu** – Data cleaning, enrichment, and staging layer  
+3. **Louis KUSNO** – Graph modeling, Neo4j integration, and analytics queries  
+
+---
+
 ## Getting started
 
 ### Prepare for Airflow
