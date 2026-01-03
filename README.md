@@ -1,5 +1,89 @@
 # the-tourist
 
+## Project Introduction
+
+This project is a data engineering application built to analyze railway trips using open SNCF datasets. Railway schedule data is complex and distributed across multiple tabular files, which makes it difficult to analyze relationships between stations and to identify indirect journeys or detours between cities. The goal of this project is to transform these datasets into a graph-based representation that enables efficient exploration of train connectivity and stop sequences.
+
+The project follows a layered data architecture and uses Apache Airflow for workflow orchestration and Neo4j for graph-based analytics. It demonstrates how raw transportation data can be ingested, cleaned, enriched, and transformed into an analytics-ready graph model.
+
+## Datasets
+
+The project is based on the following open datasets:
+
+- **[SNCF – Gares de voyageurs](https://data.sncf.com/explore/dataset/gares-de-voyageurs/table/?disjunctive.segment_drg&sort=nom)** :
+  Passenger railway stations dataset containing station identifiers, names, and geographic information.  
+
+- **[Réseau SNCF TGV, Intercités et TER](https://transport.data.gouv.fr/datasets/horaires-sncf)** : 
+  GTFS datasets containing train schedules and stop times.  
+
+## Project Design and Architecture
+
+The project is divided into three main areas, each implemented as a separate Airflow pipeline.
+
+### 1. Landing Zone – Raw Data Ingestion
+
+**Objective:**  
+Collect raw data from official SNCF sources and store it without modification to ensure traceability and reproducibility.
+
+**Steps:**
+- Download raw CSV and GTFS files (stations and stop times).
+- Store the files in a landing directory.
+- Log ingestion metadata such as timestamp and data source.
+
+**Output:**  
+Raw datasets stored in the landing zone.
+
+### 2. Staging Zone – Data Cleaning and Transformation
+
+**Objective:**  
+Prepare clean, structured, and enriched datasets suitable for analytics.
+
+**Steps:**
+- Read raw data from the landing zone.
+- Clean station data by removing duplicates and handling missing or invalid values.
+- Clean stop times data by validating stop identifiers and ordering stops using trip IDs and stop sequences.
+- Enrich stop times with station metadata (names and coordinates).
+- Persist the cleaned and enriched datasets in durable storage.
+
+**Staging Tables:**
+- `stops_staging`
+- `stop_times_staging`
+- `trips_staging`
+
+**Output:**  
+Structured and reliable datasets stored in the staging zone.
+
+### 3. Production Zone – Graph Modeling and Analytics
+
+**Objective:**  
+Transform staged data into an analytics-ready graph representation and enable advanced queries.
+
+**Steps:**
+- Create graph nodes for stations and trips.
+- Create relationships representing ordered stop sequences within each trip.
+- Load the graph into Neo4j using batch processing.
+- Execute graph queries to analyze railway connectivity and detect detours.
+
+**Graph Model:**
+- Nodes: `Station`, `Trip`
+- Relationships: `STOPS_AT`, `NEXT_STOP`
+
+**Output:**  
+Neo4j graph database supporting analytical queries.
+
+## Analytical Questions Addressed
+
+- Which train trips connect two cities through intermediate stations?
+- Which stations or cities frequently appear as detours?
+- How are stations connected based on train stop sequences?
+- Which stations are central in the railway network?
+
+## Team Members
+
+1. **VU Thi Tho** – Raw data ingestion and Airflow pipeline setup  
+2. **HUYNH Huu Thanh Tu** – Data cleaning, enrichment, and staging layer  
+3. **Louis KUSNO** – Graph modeling, Neo4j integration, and analytics queries  
+
 ## Getting started
 
 ### Prepare for Airflow
