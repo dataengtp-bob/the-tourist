@@ -235,7 +235,7 @@ MATCH (t)-[r2:STOPS_AT]->(s2:Station)
 WHERE r2.stop_sequence = r1.stop_sequence + 1
 
 // 2. Find the existing NEXT_STOP edge between them for this trip
-MATCH (s1)-[ns:NEXT_STOP {trip_id: t.id}]->(s2)
+MERGE (s1)-[ns:NEXT_STOP {trip_id: t.id}]->(s2)
 
 // 3. Copy the times from the STOPS_AT relationships onto the NEXT_STOP edge
 SET ns.departure_time = r1.departure_time,
