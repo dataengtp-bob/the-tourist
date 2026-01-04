@@ -11,6 +11,10 @@ def create_staging_directories():
     os.makedirs(STOPS_DIR, exist_ok=True)
     os.makedirs(GTFS_DIR, exist_ok=True)
     os.makedirs(STAGING_DIR, exist_ok=True)
+    try:
+        os.chmod(STAGING_DIR, 0o777)
+    except Exception:
+        pass
 
 
 def clean_and_stage_stations():
@@ -48,6 +52,7 @@ def clean_and_stage_stations():
 
     # Persist
     df.to_csv(f"{STAGING_DIR}/stations.csv", index=False)
+    os.chmod(f"{STAGING_DIR}/stations.csv", 0o666)
 
 
 def clean_and_stage_stop_times():
@@ -119,6 +124,7 @@ def clean_and_stage_stop_times():
 
     # Persist staging table
     df.to_csv(f"{STAGING_DIR}/stop_times.csv", index=False)
+    os.chmod(f"{STAGING_DIR}/stop_times.csv", 0o666)
 
 
 if __name__ == "__main__":
