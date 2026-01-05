@@ -11,4 +11,4 @@ __pycache__/
 
 # Extracted data directories
 data/landing/*
-data/staging/*
+# data/staging/*
