@@ -227,3 +227,14 @@ ORDER BY score DESC
 LIMIT 10;
 ```
 
+#### Example: Betweenness Centrality (Critical for Transport)
+Betweenness centrality detects "bridges" or bottlenecks—stations that lie on many shortest paths between other stations.
+
+```cypher
+CALL gds.betweenness.stream('railGraph')
+YIELD nodeId, score
+RETURN gds.util.asNode(nodeId).name AS Station, score
+ORDER BY score DESC
+LIMIT 10;
+```
+
