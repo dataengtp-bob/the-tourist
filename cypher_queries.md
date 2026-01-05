@@ -21,7 +21,8 @@ CREATE CONSTRAINT FOR (t:Trip) REQUIRE t.id IS UNIQUE;
 
 ```cypher
 LOAD CSV WITH HEADERS FROM 'file:///stations.csv' AS row
-MERGE (s:Station {id: row.stop_id})
+UNWIND split(row.stop_id, ';') AS station_id
+MERGE (s:Station {id: station_id})
 SET s.name = row.name,
     s.abbreviation = row.abbrev,
     s.insee_code = row.code_insee,
@@ -97,85 +98,36 @@ SET ns.departure_time = r1.departure_time,
     ns.date = t.date
 ```
 
-## 2. Interesting queries
+## 2. Basic queries
 
-### Shortest path
-
-```cypher
-MATCH (start:Station {name: 'Paris Gare de Lyon'}), (end:Station {name: 'Marseille Saint-Charles'})
-MATCH p = shortestPath((start)-[:NEXT_STOP*]-(end))
-RETURN p
-```
-
-### Travel time path finding
-
-```cypher
-MATCH (t:Trip)-[:STARTS_AT]->(start:Station)
-MATCH (t)-[:ENDS_AT]->(end:Station)
-MATCH path = (start)-[:NEXT_STOP*]->(end)
-WHERE all(r in relationships(path) WHERE r.trip_id = t.id)
-RETURN t, path
-LIMIT 1
-```
-
-### Basic Stats
-Check the size of your graph.
-
-```cypher
-// Count Stations and Trips
-MATCH (n) 
-RETURN labels(n) as Label, count(*) as Count
-```
-
-### Find a Station
-Look up a station by name (partial match).
-
-```cypher
-MATCH (s:Station) 
-WHERE s.name CONTAINS 'Paris' 
-RETURN s.name, s.id, s.abbreviation 
-LIMIT 10
-```
-
-### Visualize a Trip
-See a single trip and its sequence of stops.
+### Visualize Trip Stops
+Retrieve all stops for a specific trip.
 
 ```cypher
 MATCH (t:Trip)-[r:STOPS_AT]->(s:Station)
-WHERE t.id = 'YOUR_TRIP_ID_HERE' // e.g., pick one from the DB
+WHERE t.id = 'OCESN6122F1187_F:OUI:FR:Line::BAF1DE9A-72EC-4064-8BE9-C4EFF292CB6A::87751008:87686006:4:1819:20260503' // e.g., pick one from the DB
 RETURN t, r, s
-ORDER BY r.stop_sequence
 ```
 
-### Shortest Path (Number of Hops)
-Find the fewest stops between two stations using the `NEXT_STOP` relationship.
+### Topological Shortest Path
+Find the shortest path between two stations based solely on the number of stops (hops), disregarding physical distance or trip schedules.
 
 ```cypher
-MATCH (start:Station {name: 'Paris Gare de Lyon'}), (end:Station {name: 'Marseille Saint-Charles'})
+MATCH (start:Station {name: 'Nantes'}), (end:Station {name: 'Marseille Saint-Charles'})
 MATCH p = shortestPath((start)-[:NEXT_STOP*]-(end))
 RETURN p
 ```
 
-### Travel Time Path finding
-Find a route based on time (simple example, strictly following next connections).
+### Reconstruct Trip Path from NEXT_STOP
+Reconstruct the full traversal path of a specific trip using the `NEXT_STOP` relationships that link its sequence of stations.
 
 ```cypher
-MATCH (start:Station {name: 'Paris Montparnasse'}), (end:Station {name: 'Bordeaux St-Jean'})
-MATCH p = (start)-[:NEXT_STOP*1..5]->(end)
-RETURN p, 
-       reduce(totalTime = 0, r in relationships(p) | totalTime + toInteger(duration.between(r.departure_time, r.arrival_time).seconds)) as DurationSeconds
-ORDER BY DurationSeconds ASC
+MATCH (t:Trip)-[r1:STARTS_AT]->(start:Station)
+MATCH (t)-[r2:ENDS_AT]->(end:Station)
+MATCH path = (start)-[:NEXT_STOP*]->(end)
+WHERE all(r in relationships(path) WHERE r.trip_id = t.id)
+RETURN t, path, r1,r2
 LIMIT 1
-```
-
-### Busiest Stations
-Find stations with the most stop events.
-
-```cypher
-MATCH (s:Station)<-[r:STOPS_AT]-(:Trip)
-RETURN s.name, count(r) as connections
-ORDER BY connections DESC
-LIMIT 10
 ```
 
 ### Isolates
@@ -186,3 +138,92 @@ MATCH (s:Station)
 WHERE NOT (s)<-[:STOPS_AT]-(:Trip)
 RETURN s.name, s.id
 ```
+
+## 3. Analytical Questions Implementation
+
+These queries directly address the analytical questions posed in the README.
+
+### 1. Identify Route Variations
+
+Group all trips between two cities by their unique sequence of intermediate stops to identify distinct route variations.
+
+```cypher
+MATCH (start:Station {name: 'Paris Gare de Lyon'})<-[:STARTS_AT]-(t:Trip)-[:ENDS_AT]->(end:Station {name: 'Marseille Saint-Charles'})
+MATCH (t)-[r:STOPS_AT]->(s:Station)
+WITH t, s ORDER BY r.stop_sequence
+WITH t, collect(s) as stops
+// Group by the specific sequence of stations to find unique routes
+WITH stops, head(collect(t)) as representative_trip, count(t) as frequency
+ORDER BY size(stops) DESC
+// You can uncomment the next line to limit the number of variations shown
+// LIMIT 5
+
+// Now fetch the full graph structure for these representative trips (Query 1 style)
+MATCH (representative_trip)-[r:STOPS_AT]->(s:Station)
+OPTIONAL MATCH (s)-[ns:NEXT_STOP]->(next:Station)
+WHERE ns.trip_id = representative_trip.id
+
+RETURN representative_trip, r, s, ns, next
+```
+
+### 2. Analyze Station Role (Volume vs Connectivity)
+
+Calculate total stop volume and the number of distinct connecting stations to classify stations (e.g., major hubs vs. busy commuter stops).
+
+```cypher
+MATCH (s:Station)
+// Metric 1: Volume - Count total train stops
+OPTIONAL MATCH (s)<-[r:STOPS_AT]-(:Trip)
+WITH s, count(r) as TotalStopEvents
+
+// Metric 2: Connectivity - Count distinct neighboring stations
+OPTIONAL MATCH (s)-[:NEXT_STOP]-(neighbor)
+WITH s, TotalStopEvents, count(DISTINCT neighbor) as DistinctConnections
+
+RETURN s.name, TotalStopEvents, DistinctConnections
+ORDER BY TotalStopEvents DESC
+LIMIT 20
+```
+
+### 3. Strongest Direct Connections
+
+Identify the most frequent direct segments between station pairs by counting the number of `NEXT_STOP` relationships.
+
+```cypher
+MATCH (a:Station)-[r:NEXT_STOP]->(b:Station)
+RETURN a.name as From, b.name as To, count(r) as Frequency
+ORDER BY Frequency DESC
+LIMIT 20
+```
+
+### 4. Which stations are central in the railway network?
+
+This calculates Degree Centrality based on the network structure (`NEXT_STOP` relationships) rather than just trip volume. It highlights stations that are topologically central.
+
+```cypher
+MATCH (s:Station)
+// Count incoming and outgoing topological connections
+OPTIONAL MATCH (s)-[r:NEXT_STOP]-()
+RETURN s.name, count(r) as NetworkDegree
+ORDER BY NetworkDegree DESC
+LIMIT 10
+```
+
+> **Note:** For more advanced centrality metrics like PageRank or Betweenness Centrality (which are better for detecting "detours" and influence), you should use the **Neo4j Graph Data Science (GDS)** library if available.
+
+#### Example: PageRank with GDS (if installed)
+```cypher
+CALL gds.graph.project(
+  'railGraph',
+  'Station',
+  'NEXT_STOP'
+)
+YIELD graphName;
+
+CALL gds.pageRank.stream('railGraph')
+YIELD nodeId, score
+RETURN gds.util.asNode(nodeId).name AS Station, score
+ORDER BY score DESC
+LIMIT 10;
+```
+

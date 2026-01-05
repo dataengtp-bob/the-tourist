@@ -74,10 +74,10 @@ For a collection of useful queries to explore the data, see [cypher_queries.md](
 
 ## Analytical Questions Addressed
 
-- Which train trips connect two cities through intermediate stations?
-- Which stations or cities frequently appear as detours?
-- How are stations connected based on train stop sequences?
-- Which stations are central in the railway network?
+- **Route Variations**: What are the distinct route variations between major cities (e.g., Paris to Marseille) based on intermediate stops?
+- **Station Roles**: How can we distinguish between major transit hubs (high connectivity) and frequent commuter stops (high volume)?
+- **Network Traffic**: What are the strongest direct connections and busiest segments in the rail network?
+- **Topological Centrality**: Which stations serve as the structural "center" of the network, based on connections rather than just trip volume?
 
 ## Team Members
 

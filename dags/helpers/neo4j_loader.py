@@ -59,7 +59,8 @@ def load_stations():
 
     query = """
     LOAD CSV WITH HEADERS FROM 'file:///stations.csv' AS row
-    MERGE (s:Station {id: row.stop_id})
+    UNWIND split(row.stop_id, ';') AS station_id
+    MERGE (s:Station {id: station_id})
     SET s.name = row.name,
         s.abbreviation = row.abbrev,
         s.insee_code = row.code_insee,
