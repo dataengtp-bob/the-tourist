@@ -1,10 +1,16 @@
-# the-tourist
+# BUILDING DATA PIPELINES FOR GRAPH-BASED RAILWAY ANALYTICS
 
 ## Project Introduction
 
 This project is a data engineering application built to analyze railway trips using open SNCF datasets. Railway schedule data is complex and distributed across multiple tabular files, which makes it difficult to analyze relationships between stations and to identify indirect journeys or detours between cities. The goal of this project is to transform these datasets into a graph-based representation that enables efficient exploration of train connectivity and stop sequences.
 
 The project follows a layered data architecture and uses Apache Airflow for workflow orchestration and Neo4j for graph-based analytics. It demonstrates how raw transportation data can be ingested, cleaned, enriched, and transformed into an analytics-ready graph model.
+
+## Team Members
+
+1. **VU Thi Tho** – Raw data ingestion and Airflow pipeline setup  
+2. **HUYNH Huu Thanh Tu** – Data cleaning, enrichment, and staging layer  
+3. **Louis KUSNO** – Graph modeling, Neo4j integration, and analytics queries  
 
 ## Datasets
 
@@ -17,6 +23,8 @@ The project is based on the following open datasets:
   GTFS datasets containing train schedules and stop times.  
 
 ## Project Design and Architecture
+
+<img width="1829" height="703" alt="image" src="https://github.com/user-attachments/assets/c6ac7b59-ef4f-4555-ae30-f5fcf02f2a14" />
 
 The project is divided into three main areas, each implemented as a separate Airflow pipeline.
 
@@ -78,12 +86,6 @@ For a collection of useful queries to explore the data, see [cypher_queries.md](
 - **Station Roles**: How can we distinguish between major transit hubs (high connectivity) and frequent commuter stops (high volume)?
 - **Network Traffic**: What are the strongest direct connections and busiest segments in the rail network?
 - **Topological Centrality**: Which stations serve as the structural "center" of the network, based on connections rather than just trip volume?
-
-## Team Members
-
-1. **VU Thi Tho** – Raw data ingestion and Airflow pipeline setup  
-2. **HUYNH Huu Thanh Tu** – Data cleaning, enrichment, and staging layer  
-3. **Louis KUSNO** – Graph modeling, Neo4j integration, and analytics queries  
 
 ## Getting started
 
