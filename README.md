@@ -18,6 +18,8 @@ The project is based on the following open datasets:
 
 ## Project Design and Architecture
 
+<img width="1829" height="703" alt="image" src="https://github.com/user-attachments/assets/c6ac7b59-ef4f-4555-ae30-f5fcf02f2a14" />
+
 The project is divided into three main areas, each implemented as a separate Airflow pipeline.
 
 ### 1. Landing Zone – Raw Data Ingestion
