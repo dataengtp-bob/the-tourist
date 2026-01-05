@@ -6,6 +6,12 @@ This project is a data engineering application built to analyze railway trips us
 
 The project follows a layered data architecture and uses Apache Airflow for workflow orchestration and Neo4j for graph-based analytics. It demonstrates how raw transportation data can be ingested, cleaned, enriched, and transformed into an analytics-ready graph model.
 
+## Team Members
+
+1. **VU Thi Tho** – Raw data ingestion and Airflow pipeline setup  
+2. **HUYNH Huu Thanh Tu** – Data cleaning, enrichment, and staging layer  
+3. **Louis KUSNO** – Graph modeling, Neo4j integration, and analytics queries  
+
 ## Datasets
 
 The project is based on the following open datasets:
@@ -80,12 +86,6 @@ For a collection of useful queries to explore the data, see [cypher_queries.md](
 - Which stations or cities frequently appear as detours?
 - How are stations connected based on train stop sequences?
 - Which stations are central in the railway network?
-
-## Team Members
-
-1. **VU Thi Tho** – Raw data ingestion and Airflow pipeline setup  
-2. **HUYNH Huu Thanh Tu** – Data cleaning, enrichment, and staging layer  
-3. **Louis KUSNO** – Graph modeling, Neo4j integration, and analytics queries  
 
 ## Getting started
 
