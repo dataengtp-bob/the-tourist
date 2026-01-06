@@ -56,9 +56,6 @@ Prepare clean, structured, and enriched datasets suitable for analytics.
 
 - Remove duplicates and invalid rows.
 
-- Normalize identifiers: the raw `codes_uic` column may contain multiple IDs separated by `;` (e.g., `87001479;87271494`).
-Each identifier is split into a separate row and stored as `stop_id` in the staged dataset.
-
 - Ensure all required fields (station name, city, coordinates) are present.
 
 ***3. Clean and transform stop times data***
