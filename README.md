@@ -47,11 +47,33 @@ Raw datasets stored in the landing zone.
 Prepare clean, structured, and enriched datasets suitable for analytics.
 
 **Steps:**
-- Read raw data from the landing zone.
-- Clean station data by removing duplicates and handling missing or invalid values.
-- Clean stop times data by validating stop identifiers and ordering stops using trip IDs and stop sequences.
-- Enrich stop times with station metadata (names and coordinates).
-- Persist the cleaned and enriched datasets in durable storage.
+
+***1. Read raw data***
+
+- Load `gares-de-voyageurs.csv` (stations) and `stop_times.txt` (GTFS stop times) from the landing zone.
+
+***2. Clean and normalize station data***
+
+- Remove duplicates and invalid rows.
+
+- Normalize identifiers: the raw `codes_uic` column may contain multiple IDs separated by `;` (e.g., `87001479;87271494`).
+Each identifier is split into a separate row and stored as `stop_id` in the staged dataset.
+
+- Ensure all required fields (station name, city, coordinates) are present.
+
+***3. Clean and transform stop times data***
+
+- Normalize `stop_id` by removing technical prefixes (e.g., `StopPoint:OCETrain TER-87713040` → `87713040`).
+
+- Extract the service date from `trip_id` (last 8 digits) and combine it with `arrival_time` and `departure_time` to create full datetime values.
+
+- Convert `stop_sequence` to integer and ensure stops are ordered correctly per trip.
+
+- Remove rows with missing or invalid timestamps or service dates.
+
+***4. Persist staging tables***
+
+- Save cleaned and enriched datasets to durable storage for use in production.
 
 **Staging Tables:**
 - `stations.csv`
@@ -73,7 +95,7 @@ Transform staged data into an analytics-ready graph representation and enable ad
 
 **Graph Model:**
 - Nodes: `Station`, `Trip`
-- Relationships: `STOPS_AT`, `NEXT_STOP`
+- Relationships: `STOPS_AT`, `NEXT_STOP`, `STARTS_AT`, `ENDS_AT`
 
 **Output:**  
 Neo4j graph database supporting analytical queries.
