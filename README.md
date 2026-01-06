@@ -109,6 +109,28 @@ For a collection of useful queries to explore the data, see [cypher_queries.md](
 - **Network Traffic**: What are the strongest direct connections and busiest segments in the rail network?
 - **Topological Centrality**: Which stations serve as the structural "center" of the network, based on connections rather than just trip volume?
 
+## Project Minimal Submission Checklist
+- [x] repository with the code, well documented, including:
+  - [x] docker-compose file to run the environment
+  - [x] detailed description of the various steps
+  - [x] report in the Repository README with the project design steps (divided per area), a guide how to run it, and consideration relevant to understand it.
+  - [x] Example dataset: the project testing should work offline, i.e., you need to have some sample data points.
+  - [x] slides for the project poster. You can do them too in markdown too.
+
+### Increasing Project Grade
+
+- [x] +1: Include in the pipelines any tool discussed during the course
+  - [x] Neo4j
+  - [x] Requirement: It has to be used properly, always better to double check with teacher
+- [ ] +1: Discuss one of the theoretical topics from the course, e.g., add considerations about governance, privacy, etc
+  - [ ] Requirement: It should be included in the report and the poster.
+- [ ] +2: Using any Data Engineering tool not explained during the course
+  - [ ] Requirement: It should be state of the art tooling.
+  - [ ] Every extra should be approved
+  - [ ] Example: using Kafka for ingestion and staging (also + docker)
+- [x] +X: Creativity section
+  - [x] Examples: data viz, serious analysis.
+
 ## Getting started
 
 ### Prepare for Airflow
